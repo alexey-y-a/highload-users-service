@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-bank-api
+/highload-users-service
 bin/
 dist/
 
@@ -19,6 +19,7 @@ coverage.out
 *.env
 /.env*
 /*.env.local
+!.env.example
 *.log
 secrets.yaml
 .values.secrets.yaml

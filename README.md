@@ -5,6 +5,7 @@
 ## Статус
 
 Функциональность реализуется поэтапно.
+Шаг 2: подготовлена инфраструктура проекта.
 
 ## Что будет реализовано
 
@@ -46,6 +47,7 @@
     internal/metrics/    Prometheus
     internal/audit/      асинхронный аудит
     internal/storage/    клиент MinIO
+    internal/logger/     обёртка над logrus
 
 ## API
 
