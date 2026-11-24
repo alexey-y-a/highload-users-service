@@ -6,6 +6,7 @@
 
 Функциональность реализуется поэтапно.
 Шаг 2: подготовлена инфраструктура проекта.
+Шаг 3: приложение собирается и отвечает на GET /healthz.
 
 ## Что будет реализовано
 
@@ -30,7 +31,8 @@
 
 ## Запуск
 
-Будет добавлен на шаге контейнеризации.
+make run
+curl http://localhost:8080/healthz
 
 ## Структура
 
@@ -48,6 +50,15 @@
     internal/audit/      асинхронный аудит
     internal/storage/    клиент MinIO
     internal/logger/     обёртка над logrus
+
+| Элемент из задания | Где в проекте |
+|---|---|
+| main.go | cmd/api/main.go |
+| handlers/ | internal/handler/ |
+| services/ | internal/service/ |
+| models/ | internal/domain/ |
+| utils/ | internal/middleware/ |
+| metrics/ | internal/metrics/ |
 
 ## API
 
