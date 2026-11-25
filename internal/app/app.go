@@ -8,23 +8,29 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/alexey-y-a/highload-users-service/internal/config"
 	"github.com/gorilla/mux"
 )
 
 func Run(ctx context.Context) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
 	router := mux.NewRouter()
 	router.HandleFunc("/healthz", healthzHandler).Methods(http.MethodGet)
 
 	server := &http.Server{
-		Addr: ":8080",
-		Handler: router,
+		Addr:              cfg.GetServerAddr(),
+		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
 	}
 
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("http server: %w", err)
 	}
