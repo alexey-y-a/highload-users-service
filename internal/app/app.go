@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"time"
 
@@ -24,25 +23,63 @@ func Run(ctx context.Context) error {
 	router := mux.NewRouter()
 	router.HandleFunc("/healthz", healthzHandler).Methods(http.MethodGet)
 
+	server := &http.Server{
+		Addr:              cfg.GetServerAddr(),
+		Handler:           router,
+		ReadTimeout:       5 * time.Second,
+		ReadHeaderTimeout: 3 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
 	log.WithFields(logger.Fields{
 		"addr": cfg.GetServerAddr(),
 	}).Info("application starting")
 
-	server := &http.Server{
-		Addr:              cfg.GetServerAddr(),
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
-		BaseContext: func(_ net.Listener) context.Context {
-			return ctx
-		},
+	serverErr := make(chan error, 1)
+
+	go func() {
+		serverErr <- server.ListenAndServe()
+	}()
+
+	select {
+	case err := <-serverErr:
+		return normalizeServerError(err)
+	case <-ctx.Done():
 	}
 
-	err = server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return fmt.Errorf("http server: %w", err)
+	log.Info("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = server.Shutdown(shutdownCtx)
+	if err != nil {
+		return fmt.Errorf("shutdown http server: %w", err)
 	}
+
+	err = <-serverErr
+	if err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("http server: %w", err)
+		}
+	}
+
+	log.Info("application stopped")
 
 	return nil
+}
+
+func normalizeServerError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
+
+	return fmt.Errorf("http server: %w", err)
 }
 
 func healthzHandler(w http.ResponseWriter, _ *http.Request) {
