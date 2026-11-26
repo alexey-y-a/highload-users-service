@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/alexey-y-a/highload-users-service/internal/config"
+	"github.com/alexey-y-a/highload-users-service/internal/logger"
 	"github.com/gorilla/mux"
 )
 
@@ -18,8 +19,14 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
+	log := logger.New(cfg.GetLogLevel(), cfg.GetLogFormat())
+
 	router := mux.NewRouter()
 	router.HandleFunc("/healthz", healthzHandler).Methods(http.MethodGet)
+
+	log.WithFields(logger.Fields{
+		"addr": cfg.GetServerAddr(),
+	}).Info("application starting")
 
 	server := &http.Server{
 		Addr:              cfg.GetServerAddr(),
